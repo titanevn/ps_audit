@@ -1,0 +1,43 @@
+Auditing the activity of Windows Firewall
+
+
+# GPO Config
+> auditpol.exe /set /SubCategory:"MPSSVC rule-level Policy Change","Filtering Platform policy change","IPsec Main Mode","IPsec Quick Mode","IPsec Extended Mode","IPsec Driver","Other System Events","Filtering Platform Packet Drop","Filtering Platform Connection" /success:enable /failure:enable
+
+# NXlog Config for Microsoft-Windows-Windows Firewall With Advanced Security event logs Parsing
+
+<Input WinFirewallEventLog>
+    Module  im_msvistalog
+    <QueryXML>
+        <QueryList>
+            <Query Id="0">
+                <Select Path="Microsoft-Windows-Windows Firewall With Advanced
+                    Security/ConnectionSecurity">*</Select>
+                <Select Path="Microsoft-Windows-Windows Firewall With Advanced
+                    Security/ConnectionSecurityVerbose">*</Select>
+                <Select Path="Microsoft-Windows-Windows Firewall With Advanced
+                    Security/Firewall">*</Select>
+                <Select Path="Microsoft-Windows-Windows Firewall With Advanced
+                    Security/FirewallVerbose">*</Select>
+                <Select Path="Network Isolation Operational">*</Select>
+            </Query>
+        </QueryList>
+    </QueryXML>
+</Input>
+
+
+
+# NXlog Config for Windows Firewall Logs Parsing
+
+define EMPTY_EVENT_REGEX /(^$|^\s+$)/
+
+<Extension w3c_parser>
+    Module      xm_w3c
+</Extension>
+
+<Input pfirewall>
+    Module      im_file
+    File        'C:\Windows\system32\LogFiles\Firewall\pfirewall.log'
+    InputType   w3c_parser
+    Exec        if $raw_event =~ %EMPTY_EVENT_REGEX% drop();
+</Input>
