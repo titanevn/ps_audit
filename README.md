@@ -1,5 +1,4 @@
-# ps_audit
-PS Script to audit isolated windows host
+# Powershell command to audit isolated windows host
 
 
 # Check running process
