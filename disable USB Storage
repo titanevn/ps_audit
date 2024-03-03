@@ -1,0 +1,59 @@
+# Using GPO
+###########################
+Open Group Policy Editor: Press Win + R, type "gpedit.msc", and hit Enter to open the Group Policy Editor.
+Navigate to the USB Storage Policy: Go to Computer Configuration -> Administrative Templates -> System -> Removable Storage Access.
+Disable USB Storage: Double-click on the "All Removable Storage classes: Deny all access" policy. Select the "Enabled" option to activate the policy.
+Apply Changes: Click on "Apply" and then "OK" to save the changes.
+
+# Using Registry
+###########################
+# Disable USB storage by setting the Start value to 4 (3 mean enabled)
+  
+$registryPath = "HKLM:\SYSTEM\CurrentControlSet\Services\USBSTOR"
+Set-ItemProperty -Path $registryPath -Name "Start" -Value 4
+
+#By denied usbstor.inf file
+###########################
+  
+$infFilePath = "C:\Windows\INF\usbstor.inf"
+# Check if the file exists
+if (Test-Path $infFilePath) {
+    # Deny access to the file
+    $acl = Get-Acl $infFilePath
+    $denyRule = New-Object System.Security.AccessControl.FileSystemAccessRule("Everyone", "ReadAndExecute", "Deny")
+    $acl.AddAccessRule($denyRule)
+    Set-Acl -Path $infFilePath -AclObject $acl
+
+    Write-Host "Access to USBSTOR.INF file has been denied."
+} else {
+    Write-Host "USBSTOR.INF file not found."
+}
+
+#To disable USB storage except for devices with a specific serial number
+#################################################################################
+# Define the specific USB device serial number that you want to allow
+$allowedSerialNumber = "YOUR_SPECIFIC_SERIAL_NUMBER"
+
+# Define the registry key path for USB storage devices
+$registryPath = "HKLM:\SYSTEM\CurrentControlSet\Services\USBSTOR"
+
+# Get a list of all USB storage devices
+$usbDevices = Get-ItemProperty -Path "$registryPath\Enum" | Where-Object { $_.PSChildName -ne "USB" }
+
+# Loop through each USB device
+foreach ($device in $usbDevices) {
+    $serialNumber = $device.PSChildName
+
+    # Check if the serial number matches the allowed serial number
+    if ($serialNumber -ne $allowedSerialNumber) {
+        # Deny access to the USB storage device
+        New-ItemProperty -Path "$registryPath\Enum\$serialNumber" -Name "Deny_Read" -Value 4 -PropertyType DWORD -Force | Out-Null
+        New-ItemProperty -Path "$registryPath\Enum\$serialNumber" -Name "Deny_Write" -Value 4 -PropertyType DWORD -Force | Out-Null
+
+        Write-Host "Access to USB device with serial number $serialNumber has been denied."
+    }
+}
+
+Write-Host "USB storage access has been restricted."
+
+  
