@@ -1,0 +1,9 @@
+# Event log searching for anormaly
+
+Get USB Driver event
+
+Get-WinEvent -LogName System -FilterXPath "*[System[EventID=20003]]" | Where-Object -Property Message -like '*USBSTOR*'
+Get-WinEvent -LogName System -FilterXPath "*[System[EventID=20003]]" | ? Message -like '*USBSTOR*'
+Get-WinEvent -LogName "Microsoft-Windows-DriverFrameworks-UserMode/Operational" | ? Id -eq '2010' | ? Message -like '*USBSTOR*'
+
+ 
